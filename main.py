@@ -1,32 +1,23 @@
 from fastapi import FastAPI, UploadFile, File
-import os
-import pytesseract
-
-from services.ocr_service import extract_text_from_image, extract_text_from_pdf
-from services.extraction_service import extract_fields
-from utils.file_utils import save_temp_file
-from models.schemas import ExtractionResult
-
-
-from fastapi import FastAPI, UploadFile, File
 from typing import List
 import os
-import pytesseract
 
 from services.ocr_service import extract_text_from_image, extract_text_from_pdf
 from services.extraction_service import extract_fields
 from utils.file_utils import save_temp_file
 from models.schemas import ExtractionResult
 
-
 app = FastAPI(title="Document AI Extraction Service")
-
-pytesseract.pytesseract.tesseract_cmd = r"C:\Users\shourabha.gupta\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
 
 
 @app.get("/")
 def home():
     return {"message": "Document AI Extraction Service Running"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.post("/extract", response_model=ExtractionResult)
