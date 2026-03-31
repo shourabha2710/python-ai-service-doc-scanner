@@ -5,7 +5,7 @@ def detect_document_type(text):
 
     text_upper = text.upper()
 
-    if re.search(r"\b\d{4}\s\d{4}\s\d{4}\b", text):
+    if re.search(r"\b\d{12}\b|\b\d{4}\s\d{4}\s\d{4}\b", text):
         return "AADHAAR"
 
     if re.search(r"[A-Z]{5}[0-9]{4}[A-Z]", text):
@@ -27,10 +27,15 @@ def extract_name(lines):
 
     for i, line in enumerate(lines):
 
-        if re.search(r"\d{2}/\d{2}/\d{4}", line):
+        if re.search(r"\d{2}[/-]\d{2}[/-]\d{4}", line):
 
-            if i > 0:
-                return lines[i - 1]
+            for j in range(i - 1, max(i - 4, -1), -1):
+
+                candidate = lines[j]
+
+                if len(candidate) > 3 and not re.search(r"\d", candidate):
+
+                    return candidate
 
     return None
 
@@ -52,7 +57,7 @@ def extract_dob(text):
 
 def extract_phone(text):
 
-    phone_match = re.search(r"\b\d{10}\b", text)
+    phone_match = re.search(r"\b[6-9]\d{9}\b", text)
 
     if phone_match:
         return phone_match.group()
@@ -77,7 +82,7 @@ def extract_document_number(text, doc_type):
 
     if doc_type == "AADHAAR":
 
-        match = re.search(r"\b\d{4}\s\d{4}\s\d{4}\b", text)
+        match = re.search(r"\b\d{12}\b|\b\d{4}\s\d{4}\s\d{4}\b", text)
         return match.group() if match else None
 
     if doc_type == "PAN":
@@ -105,29 +110,28 @@ def extract_document_number(text, doc_type):
 
 def extract_address(lines):
 
-    address = None
-
-    addr_lines = []
+    address_lines = []
     capture = False
 
     for line in lines:
 
-        if "Address" in line or "ADDRESS" in line or "पता" in line:
+        line_upper = line.upper()
 
+        if "ADDRESS" in line_upper or "पता" in line_upper:
             capture = True
             continue
 
         if capture:
 
-            if len(line) < 3:
+            if len(line.strip()) < 3:
                 break
 
-            addr_lines.append(line)
+            address_lines.append(line)
 
-    if addr_lines:
-        address = " ".join(addr_lines)
+    if address_lines:
+        return " ".join(address_lines)
 
-    return address
+    return None
 
 
 def extract_expiry(text):
@@ -150,16 +154,10 @@ def extract_fields(text):
 
     lines = [l.strip() for l in text.split("\n") if l.strip()]
 
-    # -----------------------
     # Detect Document Type
-    # -----------------------
-
     doc_type = detect_document_type(text)
 
-    # -----------------------
     # Extract fields
-    # -----------------------
-
     name = extract_name(lines)
 
     dob = extract_dob(text)
@@ -173,8 +171,6 @@ def extract_fields(text):
     address = extract_address(lines)
 
     expiry = extract_expiry(text)
-
-    # -----------------------
 
     result["DocumentType"] = doc_type
     result["Name"] = name
