@@ -4,3 +4,5 @@ pytesseract
 pillow
 pdf2image
 python-multipart
+opencv-python-headless
+numpy
